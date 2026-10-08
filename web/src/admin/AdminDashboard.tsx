@@ -10,15 +10,17 @@ import {
   Check,
   Globe,
   X,
-  Bot,
   ExternalLink,
   ChevronLeft,
   UploadCloud,
+  Code2,
+  Sparkles,
 } from 'lucide-react';
 import { Tenant } from '../types';
 import { TenantAvatar } from '../components/TenantAvatar';
 import { ToastContainer, type ToastMessage } from '../components/Toast';
 import { ConfirmModal } from '../components/ConfirmModal';
+import { ConnectModal } from './ConnectModal';
 
 interface AdminDashboardProps {
   onBackToScene: () => void;
@@ -118,6 +120,7 @@ export function AdminDashboard({ onBackToScene, onTenantsChanged }: AdminDashboa
 
   const [promptCopiedId, setPromptCopiedId] = useState<string | null>(null);
   const [keyCopiedId, setKeyCopiedId] = useState<string | null>(null);
+  const [connectModalTenant, setConnectModalTenant] = useState<Tenant | null>(null);
 
   // Fetch admin tenants list
   const fetchAdminTenants = useCallback(async (token: string) => {
@@ -634,6 +637,16 @@ Catatan: Pastikan domain website sudah terdaftar di allowlist origin DioramaOps.
 
                       <td className="py-3 px-4 text-right">
                         <div className="flex items-center justify-end space-x-1.5">
+                          {/* Connect / Setup Modal */}
+                          <button
+                            onClick={() => setConnectModalTenant(t)}
+                            className="flex items-center space-x-1 px-2.5 py-1 rounded bg-blue-950/60 hover:bg-blue-900/60 border border-blue-800/50 text-[11px] text-blue-300 font-medium transition-colors"
+                            title="Buka panduan setup & cuplikan script"
+                          >
+                            <Code2 className="w-3 h-3" />
+                            <span>Connect</span>
+                          </button>
+
                           {/* Copy Agent Setup Prompt */}
                           <button
                             onClick={() => handleCopyAgentPrompt(t)}
@@ -647,8 +660,8 @@ Catatan: Pastikan domain website sudah terdaftar di allowlist origin DioramaOps.
                               </>
                             ) : (
                               <>
-                                <Bot className="w-3 h-3" />
-                                <span>Copy Agent Prompt</span>
+                                <Sparkles className="w-3 h-3" />
+                                <span>Prompt AI</span>
                               </>
                             )}
                           </button>
@@ -1016,6 +1029,16 @@ Catatan: Pastikan domain website sudah terdaftar di allowlist origin DioramaOps.
         isDestructive={true}
         onConfirm={() => executeDelete(deleteConfirm.tenantId)}
         onCancel={() => setDeleteConfirm({ isOpen: false, tenantId: '', tenantName: '' })}
+      />
+
+      {/* Quick Connect & Setup Guide Modal */}
+      <ConnectModal
+        tenant={connectModalTenant}
+        onClose={() => setConnectModalTenant(null)}
+        onCopyPrompt={handleCopyAgentPrompt}
+        onCopySiteKey={handleCopySiteKey}
+        promptCopied={!!(connectModalTenant && promptCopiedId === connectModalTenant.id)}
+        keyCopied={!!(connectModalTenant && keyCopiedId === connectModalTenant.id)}
       />
     </div>
   );
