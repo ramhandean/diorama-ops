@@ -1,0 +1,44 @@
+# Binaries & build artifacts
+/dioramaops
+/bin/
+/dist/
+*.exe
+*.dll
+*.so
+*.dylib
+
+# Go
+/vendor/
+
+# Node / Bun
+node_modules/
+bun.lock*
+pnpm-lock.yaml
+web/dist/
+web/node_modules/
+*.tsbuildinfo
+.npm
+.pnpm-store
+
+# Data & SQLite local
+data/
+*.db
+*.db-wal
+*.db-shm
+
+# OS & IDE
+.DS_Store
+.idea/
+.vscode/
+*.swp
+
+# Secrets & Credentials
+.env
+*.pem
+*.key
+client_secret_*.json
+credential-*.txt
+*.secret.json
+
+# Prototypes
+interactive_visual_*.html

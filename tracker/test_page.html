@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>DioramaOps Tracker Test Page</title>
+  <!-- Sample tracker integration -->
+  <script defer src="http://127.0.0.1:7437/m.js" data-key="pk_test_sample_123"></script>
+</head>
+<body style="font-family: sans-serif; padding: 2rem; background: #121215; color: #fafafa;">
+  <h1>Test Tenant Website</h1>
+  <p>Halaman ini memuat tracker <code>m.js</code> untuk menguji aliran telemetri.</p>
+  <button onclick="history.pushState({}, '', '/feature-a')">Pindah ke /feature-a</button>
+  <button onclick="history.pushState({}, '', '/pricing')">Pindah ke /pricing</button>
+</body>
+</html>

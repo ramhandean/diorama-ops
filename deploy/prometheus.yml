@@ -1,0 +1,16 @@
+# Prometheus Scrape Configuration for DioramaOps
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  - job_name: "dioramaops"
+    metrics_path: "/metrics"
+    static_configs:
+      - targets: ["127.0.0.1:7437"]
+        labels:
+          environment: "production"
+          service: "dioramaops"
+
+    # Jika METRICS_TOKEN diatur pada DioramaOps:
+    # bearer_token: "your-metrics-token-here"

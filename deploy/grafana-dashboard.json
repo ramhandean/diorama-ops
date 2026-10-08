@@ -1,0 +1,79 @@
+{
+  "annotations": { "list": [] },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [],
+  "liveNow": false,
+  "panels": [
+    {
+      "collapsed": false,
+      "gridPos": { "h": 6, "w": 6, "x": 0, "y": 0 },
+      "id": 1,
+      "title": "Active Visitors",
+      "type": "stat",
+      "targets": [
+        { "expr": "sum(dioramaops_active_visitors)", "legendFormat": "Global Live Visitors" }
+      ],
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto"
+      }
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 6, "w": 6, "x": 6, "y": 0 },
+      "id": 2,
+      "title": "WebSocket Connections",
+      "type": "stat",
+      "targets": [
+        { "expr": "dioramaops_ws_connections", "legendFormat": "Active Connections" }
+      ]
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 6, "w": 12, "x": 12, "y": 0 },
+      "id": 3,
+      "title": "Tenant Uptime Status",
+      "type": "stat",
+      "targets": [
+        { "expr": "dioramaops_tenant_up", "legendFormat": "{{tenant}}" }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [
+            { "options": { "0": { "color": "red", "text": "DOWN" }, "1": { "color": "green", "text": "UP" } }, "type": "value" }
+          ]
+        }
+      }
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 6 },
+      "id": 4,
+      "title": "Pageviews Rate (per minute)",
+      "type": "timeseries",
+      "targets": [
+        { "expr": "sum by (tenant) (rate(dioramaops_hits_total[5m]) * 60)", "legendFormat": "{{tenant}}" }
+      ]
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 6 },
+      "id": 5,
+      "title": "Average Dwell Time (seconds)",
+      "type": "timeseries",
+      "targets": [
+        { "expr": "dioramaops_avg_dwell_seconds", "legendFormat": "{{tenant}}" }
+      ]
+    }
+  ],
+  "schemaVersion": 38,
+  "style": "dark",
+  "tags": ["dioramaops", "telemetry"],
+  "time": { "from": "now-6h", "to": "now" },
+  "title": "DioramaOps Hub Dashboard",
+  "version": 1
+}

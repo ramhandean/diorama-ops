@@ -1,0 +1,30 @@
+services:
+  dioramaops:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: dioramaops:local
+    container_name: dioramaops-hub
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:7437:7437"
+    environment:
+      - PORT=7437
+      - ADMIN_SECRET=${ADMIN_SECRET:-rahasia_dioramaops_default}
+      - PUBLIC_URL=${PUBLIC_URL:-http://localhost:7437}
+      - PUBLIC_VIEW=${PUBLIC_VIEW:-scene-only}
+      - TRUSTED_PROXIES=${TRUSTED_PROXIES:-127.0.0.1/32,::1/128,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16}
+      - TZ=${TZ:-Asia/Jakarta}
+      - RETENTION_DAYS=${RETENTION_DAYS:-395}
+      - DEMO_MODE=${DEMO_MODE:-false}
+      - METRICS_TOKEN=${METRICS_TOKEN:-}
+    volumes:
+      - ./data:/app/data
+      - ./logos:/app/public/logos
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true

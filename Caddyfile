@@ -1,0 +1,48 @@
+# Sample Caddyfile untuk VPS Host
+# Pasang konfigurasi ini ke /etc/caddy/Caddyfile atau import ke Caddy host yang sudah ada.
+
+# Ganti diorama.domainkamu.com dengan domain kamu
+{$DOMAIN:diorama.domainkamu.com} {
+	encode zstd gzip
+
+	# /metrics hanya untuk jaringan internal (blokir akses luar via Caddy)
+	@metrics path /metrics /metrics/*
+	respond @metrics 404
+
+	# Tracker diakses lintas-origin oleh website tenant
+	@tracker path /m.js
+	header @tracker {
+		Access-Control-Allow-Origin *
+		Cross-Origin-Resource-Policy cross-origin
+		Cache-Control "public, max-age=3600"
+	}
+
+	# Logo & aset statis dengan caching
+	@static path /logos/* /assets/*
+	header @static Cache-Control "public, max-age=86400"
+
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options nosniff
+		Referrer-Policy strict-origin-when-cross-origin
+		Permissions-Policy "camera=(), microphone=(), geolocation=()"
+		Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self' wss://{host} ws://{host}; worker-src 'self' blob:; frame-ancestors 'none'; base-uri 'self'"
+		-Server
+	}
+
+	# Reverse proxy ke container DioramaOps yang listen di 127.0.0.1:7437
+	# flush_interval -1 agar streaming WebSocket & SSE tidak tertahan di buffer
+	reverse_proxy 127.0.0.1:7437 {
+		flush_interval -1
+		health_uri /healthz
+		health_interval 30s
+		header_up X-Real-IP {remote_host}
+		header_up X-Forwarded-For {remote_host}
+		header_up X-Forwarded-Proto {scheme}
+	}
+
+	log {
+		output stdout
+		format json
+	}
+}
