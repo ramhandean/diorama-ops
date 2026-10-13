@@ -26,7 +26,7 @@ export function Floor({ tenantsCount = 0, booths = [] }: FloorProps) {
       </mesh>
 
       {/* 2. Glowing Polygon Outer Rim */}
-      <mesh position={[0, 0.01, 0]} rotation={[Math.PI / 2, 0, 0]}>
+      <mesh position={[0, 0.01, 0]} rotation={[Math.PI / 2, Math.PI, Math.PI / 2]}>
         <torusGeometry args={[floorRadius * 0.98, 0.045, 8, segments]} />
         <meshBasicMaterial color="#38bdf8" />
       </mesh>
@@ -43,7 +43,7 @@ export function Floor({ tenantsCount = 0, booths = [] }: FloorProps) {
 
       {/* 3b. Mid-Orbit Concentric Cyber Ring */}
       <mesh position={[0, 0.025, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-        <ringGeometry args={[floorRadius * 0.52, floorRadius * 0.535, segments * 2]} />
+        <ringGeometry args={[floorRadius * 0.52, floorRadius * 0.535, 32]} />
         <meshBasicMaterial color="#38bdf8" transparent opacity={0.35} side={THREE.DoubleSide} />
       </mesh>
 
