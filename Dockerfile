@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1.7
 
 ARG NODE_VERSION=22
-ARG GO_VERSION=1.26
+ARG GO_VERSION=1.26.10
 
 # ---------- Stage 1: build frontend (R3F + HUD) ----------
 FROM oven/bun:1-alpine AS web
