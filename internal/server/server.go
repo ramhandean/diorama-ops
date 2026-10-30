@@ -142,6 +142,11 @@ func (s *Server) registerRoutes(mux *http.ServeMux) {
 	// Platform Configuration
 	mux.HandleFunc("GET /api/v1/config", s.handleConfig)
 
+	// Agentic Resource Discovery (ARD 1.0) Manifest
+	mux.HandleFunc("GET /.well-known/ai-catalog.json", s.handleAICatalog)
+	mux.HandleFunc("GET /ai-catalog.json", s.handleAICatalog)
+	mux.HandleFunc("GET /.well-known/ard.json", s.handleAICatalog)
+
 	// Static files & frontend SPA fallback
 	s.registerStatic(mux)
 }
@@ -410,6 +415,28 @@ func (s *Server) handleConfig(w http.ResponseWriter, r *http.Request) {
 		"public_view":   s.cfg.PublicView,
 		"retention_days": s.cfg.RetentionDays,
 	})
+}
+
+func (s *Server) handleAICatalog(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Cache-Control", "public, max-age=86400")
+
+	paths := []string{
+		filepath.Join(s.cfg.StaticDir, ".well-known", "ai-catalog.json"),
+		filepath.Join(s.cfg.StaticDir, ".well-known", "ard.json"),
+		filepath.Join(s.cfg.StaticDir, "ai-catalog.json"),
+		filepath.Join("web", "public", ".well-known", "ai-catalog.json"),
+		filepath.Join("web", "public", ".well-known", "ard.json"),
+		filepath.Join("web", "public", "ai-catalog.json"),
+	}
+	for _, p := range paths {
+		if data, err := os.ReadFile(p); err == nil && len(data) > 0 {
+			_, _ = w.Write(data)
+			return
+		}
+	}
+	http.Error(w, `{"error":"ai-catalog not found"}`, http.StatusNotFound)
 }
 
 func (s *Server) Start() error {

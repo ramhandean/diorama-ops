@@ -1,0 +1,21 @@
+{
+  "specVersion": "1.0",
+  "host": {
+    "displayName": "DioramaOps (Self-Hosted)",
+    "url": "http://localhost:7437"
+  },
+  "entries": [
+    {
+      "identifier": "urn:air:local:dioramaops:telemetry-api",
+      "displayName": "DioramaOps Telemetry API",
+      "type": "application/ai-catalog+json",
+      "url": "http://localhost:7437/api/v1",
+      "description": "Telemetry ingestion and configuration REST API.",
+      "representativeQueries": [
+        "query tenant telemetry metrics",
+        "ingest visitor presence beacon events",
+        "fetch system configuration and workspace status"
+      ]
+    }
+  ]
+}
