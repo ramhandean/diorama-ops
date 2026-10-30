@@ -195,8 +195,8 @@ export function AdminDashboard({
 
   // Open Edit Modal
   function handleOpenEdit(t: Tenant) {
-    const rawOrigins = Array.isArray(t['origins' as keyof Tenant])
-      ? (t['origins' as keyof Tenant] as unknown as string[]).join(', ')
+    const rawOrigins = Array.isArray(t.origins)
+      ? t.origins.join(', ')
       : '';
     setFormData({
       id: t.id,
@@ -207,8 +207,8 @@ export function AdminDashboard({
       position_x: t.position_x !== undefined && t.position_x !== null ? String(t.position_x) : '',
       position_y: t.position_y !== undefined && t.position_y !== null ? String(t.position_y) : '',
       position_z: t.position_z !== undefined && t.position_z !== null ? String(t.position_z) : '',
-      kuma_url: (t['kuma_url' as keyof Tenant] as unknown as string) || '',
-      health_url: (t['health_url' as keyof Tenant] as unknown as string) || '',
+      kuma_url: t.kuma_url || '',
+      health_url: t.health_url || '',
       use_favicon: t.use_favicon,
     });
     setIsEditing(true);
@@ -372,7 +372,7 @@ export function AdminDashboard({
 
   // Copy Agent Setup Prompt
   function handleCopyAgentPrompt(t: Tenant) {
-    const siteKey = (t as unknown as Record<string, string>)['site_key'] || '';
+    const siteKey = t.site_key || '';
     const origin = window.location.origin;
     const promptText = `Tolong pasang script telemetri DioramaOps ke project website '${t.name}':
 - URL Script: ${origin}/m.js
@@ -403,7 +403,7 @@ Catatan: Pastikan domain website sudah terdaftar di allowlist origin DioramaOps.
 
   // Copy Site Key
   function handleCopySiteKey(t: Tenant) {
-    const siteKey = (t as unknown as Record<string, string>)['site_key'] || '';
+    const siteKey = t.site_key || '';
     navigator.clipboard.writeText(siteKey);
     setKeyCopiedId(t.id);
     setTimeout(() => setKeyCopiedId(null), 2500);
@@ -601,7 +601,7 @@ Catatan: Pastikan domain website sudah terdaftar di allowlist origin DioramaOps.
             {/* Mobile Cards View (phone/small tablet) */}
             <div className="block md:hidden space-y-3">
               {tenants.map((t) => {
-                const siteKey = (t as unknown as Record<string, string>)['site_key'] || '';
+                const siteKey = t.site_key || '';
 
                 return (
                   <div
@@ -656,7 +656,7 @@ Catatan: Pastikan domain website sudah terdaftar di allowlist origin DioramaOps.
                       <div className="flex items-center space-x-2 min-w-0">
                         <span className="text-[11px] text-foreground-muted font-medium shrink-0">Site Key:</span>
                         <code className="text-[11px] text-foreground font-mono truncate">
-                          {siteKey ? `${siteKey.substring(0, 16)}...` : 'n/a'}
+                          {siteKey ? `${siteKey.substring(0, 12)}...` : 'n/a'}
                         </code>
                       </div>
                       <button
@@ -759,7 +759,7 @@ Catatan: Pastikan domain website sudah terdaftar di allowlist origin DioramaOps.
                 </thead>
                 <tbody className="divide-y divide-border">
                   {tenants.map((t) => {
-                    const siteKey = (t as unknown as Record<string, string>)['site_key'] || '';
+                    const siteKey = t.site_key || '';
 
                     return (
                       <tr key={t.id} className="hover:bg-surface-subtle/50 transition-colors">
@@ -794,7 +794,7 @@ Catatan: Pastikan domain website sudah terdaftar di allowlist origin DioramaOps.
                         <td className="py-3 px-4">
                           <div className="flex items-center space-x-2">
                             <code className="px-2 py-0.5 rounded bg-surface-subtle border border-border text-[11px] text-foreground font-mono">
-                              {siteKey ? `${siteKey.substring(0, 10)}...` : 'n/a'}
+                              {siteKey ? `${siteKey.substring(0, 12)}...` : 'n/a'}
                             </code>
                             <button
                               onClick={() => handleCopySiteKey(t)}

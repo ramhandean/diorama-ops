@@ -3,11 +3,15 @@ export interface Tenant {
   name: string;
   url: string;
   accent: string;
+  site_key?: string;
+  origins?: string[];
   logo_path?: string;
   use_favicon: boolean;
   position_x?: number;
   position_y?: number;
   position_z?: number;
+  kuma_url?: string;
+  health_url?: string;
   status: 'up' | 'degraded' | 'down';
   active: number;
 }
