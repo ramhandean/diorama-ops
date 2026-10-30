@@ -110,6 +110,7 @@ Add a single script tag to the `<head>` or `<body>` of your website:
 - Automatically handles Single Page Application (SPA) route changes.
 - Pauses heartbeats when the user switches browser tabs.
 - Silently degrades to POST beacon if WebSockets are blocked.
+- Supports pure HTTP Beacon mode via `data-transport="beacon"` (zero WebSocket console errors in restrictive environments).
 
 ---
 
