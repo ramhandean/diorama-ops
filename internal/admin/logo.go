@@ -86,7 +86,8 @@ func (lm *LogoManager) SaveLogo(tenantID string, fileHeader *multipart.FileHeade
 		finalData = buf
 	}
 
-	fileName := fmt.Sprintf("%s-%d%s", tenantID, time.Now().Unix(), finalExt)
+	cleanID := filepath.Base(tenantID)
+	fileName := fmt.Sprintf("%s-%d%s", cleanID, time.Now().Unix(), finalExt)
 	destPath := filepath.Join(lm.storageDir, fileName)
 
 	if err := os.WriteFile(destPath, finalData, 0644); err != nil {
