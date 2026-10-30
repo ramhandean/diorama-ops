@@ -11,19 +11,41 @@ import (
 
 func TestOriginValidation(t *testing.T) {
 	tenant := &Tenant{
-		ID:      "test-tenant",
-		Origins: []string{"https://myblog.com", "http://localhost:3000", "*.example.org"},
+		ID: "test-tenant",
+		Origins: []string{
+			"https://myblog.com",
+			"https://www.company.co.id",
+			"https://app.example.com",
+			"http://localhost:3000",
+		},
 	}
 
 	tests := []struct {
 		origin string
 		allow  bool
 	}{
+		// Apex allowed -> www and non-www allowed
 		{"https://myblog.com", true},
-		{"http://myblog.com", true}, // host match
+		{"http://myblog.com", true}, // protocol-agnostic host match
 		{"https://myblog.com:443", true},
+		{"https://www.myblog.com", true}, // apex registered -> www matches
+		{"https://sub.myblog.com", false}, // subdomain does not match apex
+
+		// Registered with www -> apex matches
+		{"https://www.company.co.id", true},
+		{"https://company.co.id", true},
+		{"https://sub.company.co.id", false},
+
+		// Subdomain registered -> strict match (no www.app.example.com or apex)
+		{"https://app.example.com", true},
+		{"https://www.app.example.com", false},
+		{"https://example.com", false},
+
+		// Port isolation
 		{"http://localhost:3000", true},
 		{"http://localhost:8080", false},
+
+		// Unregistered domain
 		{"https://evil.com", false},
 		{"", false},
 	}

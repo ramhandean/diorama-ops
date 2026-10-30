@@ -8,7 +8,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net"
 	"net/url"
+	"regexp"
 	"strings"
 	"time"
 
@@ -16,6 +18,7 @@ import (
 )
 
 var (
+	tenantIDRegex     = regexp.MustCompile(`^[a-z0-9_-]{2,64}$`)
 	ErrNotFound       = errors.New("tenant not found")
 	ErrDuplicateKey   = errors.New("site key or tenant id already exists")
 	ErrOriginRejected = errors.New("origin not allowed for this tenant")
@@ -137,11 +140,17 @@ func (s *Store) Create(ctx context.Context, t *Tenant) error {
 	if t.ID == "" {
 		return errors.New("tenant id (slug) is required")
 	}
+	if !tenantIDRegex.MatchString(t.ID) {
+		return errors.New("tenant id must be 2-64 lowercase alphanumeric, dash, or underscore characters")
+	}
 	if t.SiteKey == "" {
 		t.SiteKey = GenerateSiteKey()
 	}
 	if t.Accent == "" {
 		t.Accent = "#3b82f6"
+	}
+	if len(t.Origins) == 0 && t.URL != "" {
+		t.Origins = []string{t.URL}
 	}
 	if t.Origins == nil {
 		t.Origins = []string{}
@@ -219,7 +228,58 @@ func (t *Tenant) ValidateOrigin(rawOrigin string) bool {
 	normOrigin := normalizeHost(rawOrigin)
 	for _, allowed := range t.Origins {
 		normAllowed := normalizeHost(allowed)
-		if normAllowed == "*" || strings.EqualFold(normAllowed, normOrigin) {
+		if normAllowed == "*" || matchHost(normAllowed, normOrigin) {
+			return true
+		}
+	}
+	return false
+}
+
+func matchHost(allowed, origin string) bool {
+	if strings.EqualFold(allowed, origin) {
+		return true
+	}
+	allowedHost, allowedPort := splitHostPort(allowed)
+	originHost, originPort := splitHostPort(origin)
+	if allowedPort != originPort {
+		return false
+	}
+	if strings.EqualFold(allowedHost, originHost) {
+		return true
+	}
+	// Apex domain & www equivalence: allow www <-> apex only for non-subdomains
+	if strings.HasPrefix(allowedHost, "www.") {
+		apex := strings.TrimPrefix(allowedHost, "www.")
+		if isApexDomain(apex) && strings.EqualFold(apex, originHost) {
+			return true
+		}
+	} else if isApexDomain(allowedHost) {
+		if strings.EqualFold("www."+allowedHost, originHost) {
+			return true
+		}
+	}
+	return false
+}
+
+func splitHostPort(h string) (string, string) {
+	if i := strings.LastIndex(h, ":"); i != -1 {
+		return h[:i], h[i+1:]
+	}
+	return h, ""
+}
+
+func isApexDomain(h string) bool {
+	if h == "localhost" || net.ParseIP(h) != nil {
+		return false
+	}
+	parts := strings.Split(h, ".")
+	if len(parts) == 2 {
+		return true
+	}
+	if len(parts) == 3 {
+		tld := parts[2]
+		slt := parts[1]
+		if len(tld) == 2 && len(slt) <= 3 {
 			return true
 		}
 	}
