@@ -47,7 +47,7 @@ export const ConnectModal: React.FC<ConnectModalProps> = ({
     nextjs: {
       label: 'Next.js (App / Pages Router)',
       code: `// Sisipkan di root layout (app/layout.tsx atau pages/_app.tsx)\nimport Script from 'next/script';\n\n<Script\n  src="${origin}/m.js"\n  data-key="${siteKey}"\n  strategy="afterInteractive"\n/>`,
-      desc: 'Gunakan strategy="afterInteractive" untuk mencegah React Hydration Error (#418).',
+      desc: 'Gunakan strategy="afterInteractive". Opsional: tambahkan data-transport="beacon" untuk mode HTTP tanpa WebSocket.',
     },
     vue: {
       label: 'Nuxt 3 / Vue 3 (useHead)',

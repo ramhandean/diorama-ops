@@ -24,6 +24,8 @@ import { ConnectModal } from './ConnectModal';
 
 interface AdminDashboardProps {
   onBackToScene: () => void;
+  initialCreateOpen?: boolean;
+  onCloseCreateModal?: () => void;
   onTenantsChanged?: () => void;
 }
 
@@ -64,7 +66,12 @@ const NEON_PRESETS = [
   { label: 'Rose', hex: '#f43f5e' },
 ];
 
-export function AdminDashboard({ onBackToScene, onTenantsChanged }: AdminDashboardProps) {
+export function AdminDashboard({
+  onBackToScene,
+  initialCreateOpen = false,
+  onCloseCreateModal,
+  onTenantsChanged,
+}: AdminDashboardProps) {
   const secretInputId = useId();
   const fileInputId = useId();
   const [adminToken, setAdminToken] = useState<string>(() => {
@@ -97,7 +104,11 @@ export function AdminDashboard({ onBackToScene, onTenantsChanged }: AdminDashboa
   });
 
   // Modal states
-  const [editModalOpen, setEditModalOpen] = useState<boolean>(false);
+  const [editModalOpen, setEditModalOpen] = useState<boolean>(initialCreateOpen);
+  function closeEditModal() {
+    setEditModalOpen(false);
+    onCloseCreateModal?.();
+  }
   const [isEditing, setIsEditing] = useState<boolean>(false);
   const [formData, setFormData] = useState<TenantFormData>(emptyForm);
 
@@ -169,9 +180,11 @@ export function AdminDashboard({ onBackToScene, onTenantsChanged }: AdminDashboa
     setTenants([]);
   }
 
+  const isSelfHostedLimitReached = (tenants?.length ?? 0) >= 1;
+
   // Open Create Modal
   function handleOpenCreate() {
-    if (tenants.length >= 1) {
+    if (isSelfHostedLimitReached) {
       showToast('Versi Self-Hosted dibatasi 1 project per instance. Untuk project tambahan, jalankan instance baru.', 'warning');
       return;
     }
@@ -246,7 +259,7 @@ export function AdminDashboard({ onBackToScene, onTenantsChanged }: AdminDashboa
         return;
       }
 
-      setEditModalOpen(false);
+      closeEditModal();
       fetchAdminTenants(adminToken);
       showToast(isEditing ? 'Tenant berhasil diperbarui.' : 'Tenant baru berhasil ditambahkan.', 'success');
       onTenantsChanged?.();
@@ -454,50 +467,73 @@ Catatan: Pastikan domain website sudah terdaftar di allowlist origin DioramaOps.
   return (
     <div className="w-full h-full flex flex-col bg-background text-foreground overflow-hidden font-sans">
       {/* Header */}
-      <header className="px-6 py-3.5 bg-surface border-b border-border flex items-center justify-between">
+      <header className="px-4 sm:px-6 py-3 sm:py-3.5 bg-surface border-b border-border flex flex-col md:flex-row md:items-center justify-between gap-3">
         <div className="flex items-center space-x-3">
           <button
             onClick={onBackToScene}
-            className="p-1.5 rounded hover:bg-surface-subtle text-foreground-dim hover:text-foreground transition-colors mr-1"
+            className="w-10 h-10 rounded-lg hover:bg-surface-subtle text-foreground-dim hover:text-foreground flex items-center justify-center transition-colors mr-0.5 shrink-0"
             title="Kembali ke Diorama 3D"
+            aria-label="Kembali ke Diorama 3D"
           >
-            <ChevronLeft className="w-4 h-4" />
+            <ChevronLeft className="w-5 h-5" />
           </button>
-          <div className="w-7 h-7 rounded bg-accent/20 border border-accent/40 flex items-center justify-center text-accent">
+          <div className="w-8 h-8 rounded-lg bg-accent/20 border border-accent/40 flex items-center justify-center text-accent shrink-0">
             <Layers className="w-4 h-4" />
           </div>
-          <div>
-            <h1 className="text-sm font-semibold text-foreground">Projects & Telemetry</h1>
-            <p className="text-[11px] text-foreground-muted">Kelola project, origin allowlist, dan setup telemetri</p>
+          <div className="min-w-0">
+            <h1 className="text-sm font-semibold text-foreground truncate">
+              DioramaOps Administration
+            </h1>
+            <p className="text-[11px] text-foreground-muted truncate">Kelola project, origin allowlist, dan setup telemetri</p>
           </div>
         </div>
 
-        <div className="flex items-center space-x-2.5">
+        <div className="flex items-center flex-wrap gap-2">
           <button
             onClick={handleExport}
-            className="flex items-center space-x-1.5 px-3 py-1.5 rounded bg-surface-subtle hover:bg-surface-muted border border-border text-xs text-foreground transition-colors"
+            className="min-h-[44px] flex items-center space-x-1.5 px-3 py-2 rounded-lg bg-surface-subtle hover:bg-surface-muted border border-border text-xs text-foreground transition-colors"
             title="Download tenants.config.json"
           >
             <Download className="w-3.5 h-3.5 text-foreground-muted" />
             <span className="hidden sm:inline">Export JSON</span>
           </button>
 
-          <label htmlFor={fileInputId} className="flex items-center space-x-1.5 px-3 py-1.5 rounded bg-surface-subtle hover:bg-surface-muted border border-border text-xs text-foreground cursor-pointer transition-colors">
-            <Upload className="w-3.5 h-3.5 text-foreground-muted" />
-            <span className="hidden sm:inline">Import JSON</span>
-            <input
-              id={fileInputId}
-              type="file"
-              accept=".json"
-              className="hidden"
-              onChange={handleImport}
-            />
-          </label>
+          {isSelfHostedLimitReached ? (
+            <button
+              disabled
+              className="min-h-[44px] flex items-center space-x-1.5 px-3 py-2 rounded-lg bg-surface-subtle border border-border text-xs text-foreground-dim cursor-not-allowed opacity-50"
+              title="Batas 1 project (Self-Host) tercapai"
+            >
+              <Upload className="w-3.5 h-3.5 text-foreground-muted" />
+              <span className="hidden sm:inline">Import JSON</span>
+            </button>
+          ) : (
+            <label htmlFor={fileInputId} className="min-h-[44px] flex items-center space-x-1.5 px-3 py-2 rounded-lg bg-surface-subtle hover:bg-surface-muted border border-border text-xs text-foreground cursor-pointer transition-colors">
+              <Upload className="w-3.5 h-3.5 text-foreground-muted" />
+              <span className="hidden sm:inline">Import JSON</span>
+              <input
+                id={fileInputId}
+                type="file"
+                accept=".json"
+                className="hidden"
+                onChange={handleImport}
+              />
+            </label>
+          )}
 
           <button
             onClick={handleOpenCreate}
-            className="flex items-center space-x-1.5 px-3 py-1.5 rounded text-xs font-medium transition-colors bg-accent hover:bg-accent-hover text-white"
-            title="Tambah Tenant"
+            disabled={isSelfHostedLimitReached}
+            className={`min-h-[44px] flex items-center space-x-1.5 px-3.5 py-2 rounded-lg text-xs font-medium transition-colors ${
+              isSelfHostedLimitReached
+                ? 'bg-zinc-800 text-zinc-500 border border-zinc-700/60 cursor-not-allowed'
+                : 'bg-accent hover:bg-accent-hover text-white shadow-sm'
+            }`}
+            title={
+              isSelfHostedLimitReached
+                ? 'Batas 1 project (Self-Host) tercapai. Jalankan instance baru untuk project lain.'
+                : 'Tambah Tenant'
+            }
           >
             <Plus className="w-3.5 h-3.5" />
             <span>Tambah Tenant</span>
@@ -505,7 +541,7 @@ Catatan: Pastikan domain website sudah terdaftar di allowlist origin DioramaOps.
 
           <button
             onClick={handleLogout}
-            className="px-2.5 py-1.5 rounded hover:bg-surface-subtle text-xs text-rose-400 transition-colors ml-2"
+            className="min-h-[44px] px-3 py-2 rounded-lg hover:bg-surface-subtle text-xs text-rose-400 transition-colors ml-auto md:ml-2"
           >
             Keluar
           </button>
@@ -514,6 +550,23 @@ Catatan: Pastikan domain website sudah terdaftar di allowlist origin DioramaOps.
 
       {/* Main Body Table */}
       <main className="flex-1 overflow-y-auto p-6 max-w-7xl mx-auto w-full">
+        {/* Self-Host Isolation Banner */}
+        <div className="mb-4 p-4 rounded-lg border border-sky-500/30 bg-sky-950/20 text-xs flex items-start space-x-3">
+          <div className="p-1.5 rounded bg-sky-500/10 border border-sky-500/30 text-sky-400 mt-0.5 shrink-0">
+            <Layers className="w-4 h-4" />
+          </div>
+          <div className="flex-1">
+            <div className="flex items-center space-x-2">
+              <span className="font-semibold text-sky-300">Self-Hosted Edition (1 Instance = 1 Project)</span>
+              <span className="px-1.5 py-0.5 rounded text-[10px] font-mono bg-sky-500/20 text-sky-300 border border-sky-500/40">
+                {(tenants?.length ?? 0)}/1 Project
+              </span>
+            </div>
+            <p className="text-zinc-300 text-[11px] mt-1 leading-relaxed">
+              Instance ini didedikasikan untuk isolasi 1 project secara privat di server lokal atau VPS Anda. Untuk memonitor project website lain, jalankan instance container baru atau hubungkan ke DioramaOps Cloud.
+            </p>
+          </div>
+        </div>
 
         {loading ? (
           <div className="h-64 flex items-center justify-center text-xs text-foreground-muted">
@@ -544,167 +597,317 @@ Catatan: Pastikan domain website sudah terdaftar di allowlist origin DioramaOps.
             </div>
           </div>
         ) : (
-          <div className="border border-border rounded-lg overflow-hidden bg-surface">
-            <table className="w-full text-left text-xs border-collapse">
-              <thead>
-                <tr className="border-b border-border bg-surface-subtle text-foreground-muted">
-                  <th className="py-3 px-4 font-medium">Tenant</th>
-                  <th className="py-3 px-4 font-medium">Site Key</th>
-                  <th className="py-3 px-4 font-medium">Aksen</th>
-                  <th className="py-3 px-4 font-medium">Status & Live</th>
-                  <th className="py-3 px-4 font-medium text-right">Aksi</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border">
-                {tenants.map((t) => {
-                  const siteKey = (t as unknown as Record<string, string>)['site_key'] || '';
+          <>
+            {/* Mobile Cards View (phone/small tablet) */}
+            <div className="block md:hidden space-y-3">
+              {tenants.map((t) => {
+                const siteKey = (t as unknown as Record<string, string>)['site_key'] || '';
 
-                  return (
-                    <tr key={t.id} className="hover:bg-surface-subtle/50 transition-colors">
-                      <td className="py-3 px-4">
-                        <div className="flex items-center space-x-3">
-                          <TenantAvatar
-                            id={t.id}
-                            name={t.name}
-                            accent={t.accent}
-                            logoPath={t.logo_path}
-                            useFavicon={t.use_favicon}
-                            size="sm"
-                          />
-                          <div>
-                            <div className="font-semibold text-foreground flex items-center space-x-1.5">
-                              <span>{t.name}</span>
-                              <span className="text-[10px] text-foreground-dim font-mono">({t.id})</span>
-                            </div>
-                            <a
-                              href={t.url}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="text-[11px] text-foreground-muted hover:text-accent flex items-center space-x-1 truncate max-w-[200px]"
-                            >
-                              <span>{t.url.replace(/^https?:\/\//, '')}</span>
-                              <ExternalLink className="w-2.5 h-2.5" />
-                            </a>
+                return (
+                  <div
+                    key={t.id}
+                    className="p-4 rounded-xl bg-surface border border-border space-y-3.5 shadow-sm"
+                  >
+                    {/* Header: Avatar, Name, Status */}
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex items-center space-x-3 min-w-0">
+                        <TenantAvatar
+                          id={t.id}
+                          name={t.name}
+                          accent={t.accent}
+                          logoPath={t.logo_path}
+                          useFavicon={t.use_favicon}
+                          size="md"
+                        />
+                        <div className="min-w-0">
+                          <div className="font-semibold text-foreground flex items-center space-x-1.5 truncate">
+                            <span className="truncate">{t.name}</span>
+                            <span className="text-[10px] text-foreground-dim font-mono shrink-0">({t.id})</span>
                           </div>
+                          <a
+                            href={t.url}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="text-xs text-foreground-muted hover:text-accent flex items-center space-x-1 truncate mt-0.5"
+                          >
+                            <span className="truncate">{t.url.replace(/^https?:\/\//, '')}</span>
+                            <ExternalLink className="w-3 h-3 shrink-0" />
+                          </a>
                         </div>
-                      </td>
+                      </div>
 
-                      <td className="py-3 px-4">
-                        <div className="flex items-center space-x-2">
-                          <code className="px-2 py-0.5 rounded bg-surface-subtle border border-border text-[11px] text-foreground font-mono">
-                            {siteKey ? `${siteKey.substring(0, 10)}...` : 'n/a'}
-                          </code>
-                          <button
-                            onClick={() => handleCopySiteKey(t)}
-                            className="p-1 rounded hover:bg-surface-subtle text-foreground-dim hover:text-foreground"
-                            title="Salin Site Key"
-                          >
-                            {keyCopiedId === t.id ? (
-                              <Check className="w-3.5 h-3.5 text-emerald-400" />
-                            ) : (
-                              <Copy className="w-3.5 h-3.5" />
-                            )}
-                          </button>
-                        </div>
-                      </td>
+                      {/* Status & Live Badge */}
+                      <div className="flex items-center space-x-1.5 px-2 py-1 rounded bg-surface-subtle border border-border text-[11px] shrink-0">
+                        <span
+                          className={`w-2 h-2 rounded-full ${
+                            t.status === 'up'
+                              ? 'bg-emerald-500'
+                              : t.status === 'degraded'
+                              ? 'bg-amber-500'
+                              : 'bg-rose-500'
+                          }`}
+                        />
+                        <span className="font-semibold text-foreground">{t.active} live</span>
+                      </div>
+                    </div>
 
-                      <td className="py-3 px-4">
-                        <div className="flex items-center space-x-2">
-                          <span
-                            className="w-3 h-3 rounded-full border border-white/20"
-                            style={{ backgroundColor: t.accent }}
-                          />
-                          <span className="font-mono text-[11px] text-foreground-muted">{t.accent}</span>
-                        </div>
-                      </td>
+                    {/* Site Key Box */}
+                    <div className="flex items-center justify-between p-2.5 rounded-lg bg-surface-subtle border border-border/80 text-xs">
+                      <div className="flex items-center space-x-2 min-w-0">
+                        <span className="text-[11px] text-foreground-muted font-medium shrink-0">Site Key:</span>
+                        <code className="text-[11px] text-foreground font-mono truncate">
+                          {siteKey ? `${siteKey.substring(0, 16)}...` : 'n/a'}
+                        </code>
+                      </div>
+                      <button
+                        onClick={() => handleCopySiteKey(t)}
+                        className="min-h-[36px] px-2.5 rounded-md hover:bg-surface-muted text-foreground-dim hover:text-foreground flex items-center space-x-1 transition-colors"
+                        title="Salin Site Key"
+                        aria-label="Salin Site Key"
+                      >
+                        {keyCopiedId === t.id ? (
+                          <>
+                            <Check className="w-3.5 h-3.5 text-emerald-400" />
+                            <span className="text-[10px] text-emerald-400 font-medium">Disalin</span>
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="w-3.5 h-3.5" />
+                            <span className="text-[10px]">Salin</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
 
-                      <td className="py-3 px-4">
-                        <div className="flex items-center space-x-2">
-                          <span
-                            className={`w-2 h-2 rounded-full ${
-                              t.status === 'up'
-                                ? 'bg-emerald-500'
-                                : t.status === 'degraded'
-                                ? 'bg-amber-500'
-                                : 'bg-rose-500'
-                            }`}
-                          />
-                          <span className="capitalize text-foreground-muted">{t.status}</span>
-                          <span className="text-foreground-dim">·</span>
-                          <span className="font-semibold text-foreground">{t.active} live</span>
-                        </div>
-                      </td>
+                    {/* Actions Row */}
+                    <div className="pt-2 border-t border-border flex items-center justify-between gap-2">
+                      <button
+                        onClick={() => setConnectModalTenant(t)}
+                        className="min-h-[44px] flex-1 flex items-center justify-center space-x-1.5 px-3 py-2 rounded-lg bg-blue-950/60 hover:bg-blue-900/60 border border-blue-800/50 text-xs text-blue-300 font-medium transition-colors"
+                        title="Panduan Setup & Integrasi Script"
+                      >
+                        <Code2 className="w-3.5 h-3.5" />
+                        <span>Setup / Connect</span>
+                      </button>
 
-                      <td className="py-3 px-4 text-right">
-                        <div className="flex items-center justify-end space-x-1.5">
-                          {/* Connect / Setup Modal */}
-                          <button
-                            onClick={() => setConnectModalTenant(t)}
-                            className="flex items-center space-x-1 px-2.5 py-1 rounded bg-blue-950/60 hover:bg-blue-900/60 border border-blue-800/50 text-[11px] text-blue-300 font-medium transition-colors"
-                            title="Buka panduan setup & cuplikan script"
-                          >
-                            <Code2 className="w-3 h-3" />
-                            <span>Connect</span>
-                          </button>
+                      <button
+                        onClick={() => handleCopyAgentPrompt(t)}
+                        className="min-h-[44px] px-3 py-2 rounded-lg bg-surface-subtle hover:bg-surface-muted border border-border text-xs text-accent font-medium flex items-center space-x-1.5 transition-colors"
+                        title="Salin Agent Setup Prompt untuk AI coding agent"
+                      >
+                        {promptCopiedId === t.id ? (
+                          <>
+                            <Check className="w-3.5 h-3.5 text-emerald-400" />
+                            <span className="text-emerald-400">Tersalin!</span>
+                          </>
+                        ) : (
+                          <>
+                            <Sparkles className="w-3.5 h-3.5" />
+                            <span>Prompt AI</span>
+                          </>
+                        )}
+                      </button>
 
-                          {/* Copy Agent Setup Prompt */}
-                          <button
-                            onClick={() => handleCopyAgentPrompt(t)}
-                            className="flex items-center space-x-1 px-2 py-1 rounded bg-surface-subtle hover:bg-surface-muted border border-border text-[11px] text-accent transition-colors"
-                            title="Salin Agent Setup Prompt untuk AI coding agent"
-                          >
-                            {promptCopiedId === t.id ? (
-                              <>
-                                <Check className="w-3 h-3 text-emerald-400" />
-                                <span className="text-emerald-400">Tersalin!</span>
-                              </>
-                            ) : (
-                              <>
-                                <Sparkles className="w-3 h-3" />
-                                <span>Prompt AI</span>
-                              </>
-                            )}
-                          </button>
+                      <div className="flex items-center space-x-1.5">
+                        <button
+                          onClick={() => {
+                            setUploadingTenant(t);
+                            setSelectedFile(null);
+                            setUploadError('');
+                            setUploadModalOpen(true);
+                          }}
+                          className="w-11 h-11 rounded-lg hover:bg-surface-subtle border border-border text-foreground-dim hover:text-foreground flex items-center justify-center transition-colors"
+                          title="Upload Logo"
+                          aria-label="Upload Logo"
+                        >
+                          <Upload className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => handleOpenEdit(t)}
+                          className="w-11 h-11 rounded-lg hover:bg-surface-subtle border border-border text-foreground-dim hover:text-foreground flex items-center justify-center transition-colors"
+                          title="Edit Tenant"
+                          aria-label="Edit Tenant"
+                        >
+                          <Edit2 className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => handleDelete(t.id)}
+                          className="w-11 h-11 rounded-lg hover:bg-surface-subtle border border-border text-foreground-dim hover:text-rose-400 flex items-center justify-center transition-colors"
+                          title="Hapus Tenant"
+                          aria-label="Hapus Tenant"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
 
-                          {/* Upload Logo */}
-                          <button
-                            onClick={() => {
-                              setUploadingTenant(t);
-                              setSelectedFile(null);
-                              setUploadError('');
-                              setUploadModalOpen(true);
-                            }}
-                            className="p-1.5 rounded hover:bg-surface-subtle text-foreground-dim hover:text-foreground"
-                            title="Upload Logo (PNG/WebP/SVG)"
-                          >
-                            <Upload className="w-3.5 h-3.5" />
-                          </button>
+            {/* Desktop Table View */}
+            <div className="hidden md:block border border-border rounded-lg overflow-x-auto bg-surface">
+              <table className="w-full text-left text-xs border-collapse">
+                <thead>
+                  <tr className="border-b border-border bg-surface-subtle text-foreground-muted">
+                    <th className="py-3 px-4 font-medium">Tenant</th>
+                    <th className="py-3 px-4 font-medium">Site Key</th>
+                    <th className="py-3 px-4 font-medium">Aksen</th>
+                    <th className="py-3 px-4 font-medium">Status & Live</th>
+                    <th className="py-3 px-4 font-medium text-right">Aksi</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border">
+                  {tenants.map((t) => {
+                    const siteKey = (t as unknown as Record<string, string>)['site_key'] || '';
 
-                          {/* Edit */}
-                          <button
-                            onClick={() => handleOpenEdit(t)}
-                            className="p-1.5 rounded hover:bg-surface-subtle text-foreground-dim hover:text-foreground"
-                            title="Edit Tenant"
-                          >
-                            <Edit2 className="w-3.5 h-3.5" />
-                          </button>
+                    return (
+                      <tr key={t.id} className="hover:bg-surface-subtle/50 transition-colors">
+                        <td className="py-3 px-4">
+                          <div className="flex items-center space-x-3">
+                            <TenantAvatar
+                              id={t.id}
+                              name={t.name}
+                              accent={t.accent}
+                              logoPath={t.logo_path}
+                              useFavicon={t.use_favicon}
+                              size="sm"
+                            />
+                            <div>
+                              <div className="font-semibold text-foreground flex items-center space-x-1.5">
+                                <span>{t.name}</span>
+                                <span className="text-[10px] text-foreground-dim font-mono">({t.id})</span>
+                              </div>
+                              <a
+                                href={t.url}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="text-[11px] text-foreground-muted hover:text-accent flex items-center space-x-1 truncate max-w-[200px]"
+                              >
+                                <span>{t.url.replace(/^https?:\/\//, '')}</span>
+                                <ExternalLink className="w-2.5 h-2.5" />
+                              </a>
+                            </div>
+                          </div>
+                        </td>
 
-                          {/* Delete */}
-                          <button
-                            onClick={() => handleDelete(t.id)}
-                            className="p-1.5 rounded hover:bg-surface-subtle text-foreground-dim hover:text-rose-400"
-                            title="Hapus Tenant"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+                        <td className="py-3 px-4">
+                          <div className="flex items-center space-x-2">
+                            <code className="px-2 py-0.5 rounded bg-surface-subtle border border-border text-[11px] text-foreground font-mono">
+                              {siteKey ? `${siteKey.substring(0, 10)}...` : 'n/a'}
+                            </code>
+                            <button
+                              onClick={() => handleCopySiteKey(t)}
+                              className="p-1 rounded hover:bg-surface-subtle text-foreground-dim hover:text-foreground"
+                              title="Salin Site Key"
+                            >
+                              {keyCopiedId === t.id ? (
+                                <Check className="w-3.5 h-3.5 text-emerald-400" />
+                              ) : (
+                                <Copy className="w-3.5 h-3.5" />
+                              )}
+                            </button>
+                          </div>
+                        </td>
+
+                        <td className="py-3 px-4">
+                          <div className="flex items-center space-x-2">
+                            <span
+                              className="w-3 h-3 rounded-full border border-white/20"
+                              style={{ backgroundColor: t.accent }}
+                            />
+                            <span className="font-mono text-[11px] text-foreground-muted">{t.accent}</span>
+                          </div>
+                        </td>
+
+                        <td className="py-3 px-4">
+                          <div className="flex items-center space-x-2">
+                            <span
+                              className={`w-2 h-2 rounded-full ${
+                                t.status === 'up'
+                                  ? 'bg-emerald-500'
+                                  : t.status === 'degraded'
+                                  ? 'bg-amber-500'
+                                  : 'bg-rose-500'
+                              }`}
+                            />
+                            <span className="capitalize text-foreground-muted">{t.status}</span>
+                            <span className="text-foreground-dim">·</span>
+                            <span className="font-semibold text-foreground">{t.active} live</span>
+                          </div>
+                        </td>
+
+                        <td className="py-3 px-4 text-right">
+                          <div className="flex items-center justify-end space-x-1.5">
+                            {/* Connect / Setup Modal */}
+                            <button
+                              onClick={() => setConnectModalTenant(t)}
+                              className="flex items-center space-x-1 px-2.5 py-1 rounded bg-blue-950/60 hover:bg-blue-900/60 border border-blue-800/50 text-[11px] text-blue-300 font-medium transition-colors"
+                              title="Buka panduan setup & cuplikan script"
+                            >
+                              <Code2 className="w-3 h-3" />
+                              <span>Connect</span>
+                            </button>
+
+                            {/* Copy Agent Setup Prompt */}
+                            <button
+                              onClick={() => handleCopyAgentPrompt(t)}
+                              className="flex items-center space-x-1 px-2 py-1 rounded bg-surface-subtle hover:bg-surface-muted border border-border text-[11px] text-accent transition-colors"
+                              title="Salin Agent Setup Prompt untuk AI coding agent"
+                            >
+                              {promptCopiedId === t.id ? (
+                                <>
+                                  <Check className="w-3 h-3 text-emerald-400" />
+                                  <span className="text-emerald-400">Tersalin!</span>
+                                </>
+                              ) : (
+                                <>
+                                  <Sparkles className="w-3 h-3" />
+                                  <span>Prompt AI</span>
+                                </>
+                              )}
+                            </button>
+
+                            {/* Upload Logo */}
+                            <button
+                              onClick={() => {
+                                setUploadingTenant(t);
+                                setSelectedFile(null);
+                                setUploadError('');
+                                setUploadModalOpen(true);
+                              }}
+                              className="p-1.5 rounded hover:bg-surface-subtle text-foreground-dim hover:text-foreground"
+                              title="Upload Logo (PNG/WebP/SVG)"
+                            >
+                              <Upload className="w-3.5 h-3.5" />
+                            </button>
+
+                            {/* Edit */}
+                            <button
+                              onClick={() => handleOpenEdit(t)}
+                              className="p-1.5 rounded hover:bg-surface-subtle text-foreground-dim hover:text-foreground"
+                              title="Edit Tenant"
+                            >
+                              <Edit2 className="w-3.5 h-3.5" />
+                            </button>
+
+                            {/* Delete */}
+                            <button
+                              onClick={() => handleDelete(t.id)}
+                              className="p-1.5 rounded hover:bg-surface-subtle text-foreground-dim hover:text-rose-400"
+                              title="Hapus Tenant"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </>
         )}
       </main>
 
@@ -712,7 +915,7 @@ Catatan: Pastikan domain website sudah terdaftar di allowlist origin DioramaOps.
       {editModalOpen && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-[2px]"
-          onClick={() => setEditModalOpen(false)}
+          onClick={closeEditModal}
         >
           <div
             className="w-full max-w-lg p-6 rounded-lg bg-[#0c0c0f] border border-zinc-800 text-foreground overflow-y-auto max-h-[90vh]"
@@ -723,7 +926,7 @@ Catatan: Pastikan domain website sudah terdaftar di allowlist origin DioramaOps.
                 {isEditing ? `Edit Tenant: ${formData.id}` : 'Tambah Tenant Baru'}
               </h3>
               <button
-                onClick={() => setEditModalOpen(false)}
+                onClick={closeEditModal}
                 className="p-1 rounded text-foreground-dim hover:text-foreground"
               >
                 <X className="w-4 h-4" />
