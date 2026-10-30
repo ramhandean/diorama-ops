@@ -3,6 +3,7 @@
 
   try {
     if (navigator.doNotTrack === '1' || window.doNotTrack === '1') return;
+    if (/bot|googlebot|crawler|spider|robot|lighthouse|headless/i.test(navigator.userAgent)) return;
 
     var script = document.currentScript || document.querySelector('script[data-key]');
     if (!script) return;
@@ -18,8 +19,9 @@
     var sid = 's_' + Math.random().toString(36).substring(2, 10) + Date.now().toString(36).slice(-4);
     var ws = null;
     var hbTimer = null;
-    var retryDelay = 2000;
     var useBeaconFallback = false;
+    var beaconOnly = script.getAttribute('data-transport') === 'beacon' || script.hasAttribute('data-no-ws');
+    var helloSent = false;
 
     function getPath() {
       return window.location.pathname || '/';
@@ -80,15 +82,33 @@
       }
     }
 
+    function fallbackToBeacon() {
+      useBeaconFallback = true;
+      if (!helloSent) {
+        helloSent = true;
+        sendBeacon({
+          t: 'hello',
+          key: siteKey,
+          sid: sid,
+          path: getPath(),
+          ref: getRef()
+        });
+      }
+      startHeartbeat();
+    }
+
     function connectWS() {
-      if (useBeaconFallback) return;
+      if (useBeaconFallback || beaconOnly) {
+        fallbackToBeacon();
+        return;
+      }
 
       try {
         var wsUrl = wsProto + '//' + hubHost + '/ws';
         ws = new WebSocket(wsUrl);
 
         ws.onopen = function () {
-          retryDelay = 2000;
+          helloSent = true;
           ws.send(JSON.stringify({
             t: 'hello',
             key: siteKey,
@@ -101,24 +121,14 @@
 
         ws.onclose = function () {
           stopHeartbeat();
-          // Exponential backoff with jitter up to 30s
-          retryDelay = Math.min(retryDelay * 1.5 + Math.random() * 1000, 30000);
-          setTimeout(connectWS, retryDelay);
+          fallbackToBeacon();
         };
 
         ws.onerror = function () {
           try { ws.close(); } catch (e) {}
         };
       } catch (e) {
-        useBeaconFallback = true;
-        sendBeacon({
-          t: 'hello',
-          key: siteKey,
-          sid: sid,
-          path: getPath(),
-          ref: getRef()
-        });
-        startHeartbeat();
+        fallbackToBeacon();
       }
     }
 
