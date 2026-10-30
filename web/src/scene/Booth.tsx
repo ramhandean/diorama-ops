@@ -105,30 +105,33 @@ export function Booth({
             }
           }
 
-          const isMostlyTransparent = transparentCount > (w * h) * 0.15;
-          const avgLum = opaqueCount > 0 ? totalLum / opaqueCount : 128;
-          const isDarkLogo = avgLum < 110;
+          const totalPixels = w * h;
+          const transRatio = transparentCount / (totalPixels || 1);
+          const avgLum = opaqueCount > 0 ? totalLum / opaqueCount : 255;
+          const isDarkSilhouette = transRatio > 0.20 && avgLum < 80;
+          const isLightBadge = transRatio > 0.20 && avgLum >= 180;
 
-          if (isMostlyTransparent && isDarkLogo) {
+          if (isDarkSilhouette || isLightBadge) {
+            // Paint crisp white circle backing for transparent silhouettes (GitHub) and light badges (RantauPay)
             ctx.fillStyle = '#ffffff';
             ctx.beginPath();
             ctx.arc(targetSize / 2, targetSize / 2, targetSize / 2, 0, Math.PI * 2);
             ctx.fill();
           }
 
-          if (hasContent && minX < maxX && minY < maxY) {
-            const cropW = maxX - minX + 1;
-            const cropH = maxY - minY + 1;
-            const maxDim = Math.max(cropW, cropH);
-            const padRatio = 0.90;
-            const drawSize = targetSize * padRatio;
-            const scale = drawSize / maxDim;
-            const finalW = cropW * scale;
-            const finalH = cropH * scale;
-            const dx = (targetSize - finalW) / 2;
-            const dy = (targetSize - finalH) / 2;
-
-            ctx.drawImage(img, minX, minY, cropW, cropH, dx, dy, finalW, finalH);
+          if (hasContent && maxX >= minX && maxY >= minY) {
+            const sw = maxX - minX + 1;
+            const sh = maxY - minY + 1;
+            // Dark silhouette: 84% centered on white backing circle
+            // Light badge / Opaque square: 102% full bleed to eliminate all edge gaps
+            const fillPct = isDarkSilhouette ? 0.84 : 1.02;
+            const maxDim = Math.max(sw, sh);
+            const scale = (targetSize * fillPct) / maxDim;
+            const dw = sw * scale;
+            const dh = sh * scale;
+            const dx = (targetSize - dw) / 2;
+            const dy = (targetSize - dh) / 2;
+            ctx.drawImage(img, minX, minY, sw, sh, dx, dy, dw, dh);
           } else {
             ctx.drawImage(img, 0, 0, targetSize, targetSize);
           }

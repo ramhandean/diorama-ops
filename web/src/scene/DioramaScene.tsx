@@ -24,11 +24,12 @@ export function DioramaScene({
       {/* Subtle Fog matching prototype */}
       <fog attach="fog" args={['#0c0d14', 22, 45]} />
 
-      {/* Prototype Studio Lighting Setup */}
-      <ambientLight intensity={0.6} />
+      {/* High-Contrast Studio Lighting Setup */}
+      <ambientLight intensity={0.9} />
+      <hemisphereLight args={['#dbeafe', '#1e293b', 1.1]} />
       <directionalLight
-        position={[8, 12, 6]}
-        intensity={0.9}
+        position={[10, 16, 8]}
+        intensity={1.6}
         castShadow
         shadow-mapSize={[1024, 1024]}
         shadow-camera-near={0.5}
@@ -38,8 +39,10 @@ export function DioramaScene({
         shadow-camera-top={10}
         shadow-camera-bottom={-10}
       />
-      {/* Soft fill light */}
-      <directionalLight position={[-10, 8, -8]} intensity={0.25} color="#60a5fa" />
+      {/* Cyan key fill light */}
+      <directionalLight position={[-10, 8, -6]} intensity={0.7} color="#38bdf8" />
+      {/* Subtle purple rim backlight */}
+      <directionalLight position={[4, 6, -10]} intensity={0.4} color="#a855f7" />
 
       {/* Orbit Controls bounded matching prototype */}
       <OrbitControls
