@@ -268,6 +268,8 @@ func splitHostPort(h string) (string, string) {
 	return h, ""
 }
 
+// ponytail: lightweight heuristic for 2-part apex (domain.com) and 3-part SLDs (domain.co.id).
+// Upgrade to golang.org/x/net/publicsuffix if arbitrary complex gTLDs required.
 func isApexDomain(h string) bool {
 	if h == "localhost" || net.ParseIP(h) != nil {
 		return false

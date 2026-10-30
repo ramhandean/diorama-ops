@@ -424,11 +424,7 @@ func (s *Server) handleAICatalog(w http.ResponseWriter, r *http.Request) {
 
 	paths := []string{
 		filepath.Join(s.cfg.StaticDir, ".well-known", "ai-catalog.json"),
-		filepath.Join(s.cfg.StaticDir, ".well-known", "ard.json"),
-		filepath.Join(s.cfg.StaticDir, "ai-catalog.json"),
 		filepath.Join("web", "public", ".well-known", "ai-catalog.json"),
-		filepath.Join("web", "public", ".well-known", "ard.json"),
-		filepath.Join("web", "public", "ai-catalog.json"),
 	}
 	for _, p := range paths {
 		if data, err := os.ReadFile(p); err == nil && len(data) > 0 {
